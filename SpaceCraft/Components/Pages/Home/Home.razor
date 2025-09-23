@@ -1,0 +1,26 @@
+﻿@page "/"
+@inject NavigationManager Navigation
+@inject NavigationHistoryService History
+
+<h1>Главная страница</h1>
+<BackButton />
+<div class="home-container">
+    <button class="main-add-button" @onclick="NavigateToActionOrInfo">
+        <span class="oi oi-plus"></span> Добавить дело / информацию
+    </button>
+
+    <PinnedTable />
+</div>
+
+@code {
+    private async Task NavigateToActionOrInfo()
+    {
+        await History.PushAsync("/");
+        Navigation.NavigateTo("/action-or-info");
+    }
+
+    private async Task HandleClick()
+    {
+        await History.PushAsync("/");
+    }
+}

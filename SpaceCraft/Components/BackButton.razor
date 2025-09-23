@@ -1,0 +1,43 @@
+﻿@inject NavigationManager Navigation
+@inject NavigationHistoryService History
+@implements IDisposable
+
+@if (hasItems)
+{
+    <button class="back-button" @onclick="NavigateBack">
+        <span class="oi oi-arrow-left"></span>
+    </button>
+}
+
+@code {
+    private bool hasItems;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hasItems = await History.HasItemsAsync();
+        History.OnStackChanged += OnStackChanged;
+    }
+
+    private async void OnStackChanged()
+    {
+        hasItems = await History.HasItemsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task NavigateBack()
+    {
+        var parentUrl = await History.PopAsync();
+        if (parentUrl != null)
+        {
+            Navigation.NavigateTo(parentUrl);
+        }
+        
+        hasItems = await History.HasItemsAsync();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        History.OnStackChanged -= OnStackChanged;
+    }
+}

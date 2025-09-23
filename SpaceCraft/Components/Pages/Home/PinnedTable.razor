@@ -1,0 +1,107 @@
+﻿@inject KnowledgeService KnowledgeService
+@inject TaskService TaskService
+@inject NavigationManager Nav
+@inject NavigationHistoryService History
+
+<div class="pinned-section">
+    <h3>📌 Pinned</h3>
+    
+    @if (PinnedItems != null && PinnedTasks != null)
+    {
+        @if (PinnedItems.Any() || PinnedTasks.Any())
+        {
+            <div class="pinned-grid">
+                @foreach (var item in PinnedItems)
+                {
+                    <div class="pinned-item">
+                        <div class="item-icon">@(item.IsFolder ? "📁" : "📄")</div>
+                        <div class="item-content" @onclick="() => OpenPinnedKnowledge(item)" style="cursor: pointer;">
+                            <h4>@item.Title</h4>
+                        </div>
+                        <button class="unpin-button" @onclick="() => TogglePin(item.Id)">
+                            <span class="oi oi-x"></span>
+                        </button>
+                    </div>
+                }
+
+                @foreach (var task in PinnedTasks)
+                {
+                    <div class="pinned-item">
+                        <div class="item-icon">📄</div>
+                        <div class="item-content" @onclick="() => OpenTaskItem(task)" style="cursor: pointer;">
+                            <h4>@task.Title</h4>
+                        </div>
+                        <button class="unpin-button" @onclick="() => ToggleTaskPin(task.Id)">
+                            <span class="oi oi-x"></span>
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p>Нет закреплённых элементов.</p>
+        }
+    }
+</div>
+
+@code {
+    private List<KnowledgeItem>? PinnedItems;
+    private List<TaskItem>? PinnedTasks;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPinnedItems();
+    }
+
+    private async Task LoadPinnedItems()
+    {
+        PinnedItems = await KnowledgeService.GetPinnedItems();
+        PinnedTasks = await TaskService.GetPinnedTasks();
+    }
+
+    private async Task OpenPinnedKnowledge(KnowledgeItem item)
+    {
+        if (item.IsFolder)
+        {
+            OpenFolder(item.Id);
+        }
+        else
+        {
+            OpenKnowledgeItem(item);
+        }
+    }
+
+    private async Task OpenKnowledgeItem(KnowledgeItem item)
+    {
+        var currentUrl = Nav.Uri.Replace(Nav.BaseUri, "/");
+        await History.PushAsync(currentUrl);
+        Nav.NavigateTo($"/edit/{item.Id}");
+    }
+
+    private async Task OpenFolder(int folderId)
+    {
+        var currentUrl = Nav.Uri.Replace(Nav.BaseUri, "/");
+        await History.PushAsync(currentUrl);
+        Nav.NavigateTo($"/base/{folderId}");
+    }
+
+    private async Task OpenTaskItem(TaskItem item)
+    {
+        var currentUrl = Nav.Uri.Replace(Nav.BaseUri, "/");
+        await History.PushAsync(currentUrl);
+        Nav.NavigateTo($"/task/edit/{item.Id}");
+    }
+
+    private async Task TogglePin(int id)
+    {
+        await KnowledgeService.TogglePin(id);
+        await LoadPinnedItems();
+    }
+
+    private async Task ToggleTaskPin(int id)
+    {
+        await TaskService.TogglePin(id);
+        await LoadPinnedItems();
+    }
+}

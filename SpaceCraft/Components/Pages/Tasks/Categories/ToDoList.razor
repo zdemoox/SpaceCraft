@@ -1,0 +1,107 @@
+﻿@page "/to-do-list"
+@inject TaskService TaskService
+@inject IJSRuntime JS
+@inject NavigationHistoryService History
+
+<div class="task-page">
+    <h1>Ближайшее время</h1>
+    <BackButton />
+
+    <div class="space-y-2">
+        @if (Tasks != null)
+        {
+            @foreach (var task in Tasks)
+            {
+                <TaskCard TaskItem="@task" 
+                         OnDelete="DeleteTask" />
+            }
+        }
+    </div>
+
+    <button class="new-task-btn" @onclick="AddTask">
+        <span class="new-task-icon">➕</span>
+        <span class="new-task-text">Новая задача</span>
+    </button>
+</div>
+
+@code {
+    private List<TaskItem>? Tasks;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTasks();
+    }
+
+    private async Task LoadTasks()
+    {
+        Tasks = await TaskService.GetByCategory(TaskCategory.ToDoList);
+    }
+
+    private async Task AddTask()
+    {
+        try
+        {
+            var title = await JS.InvokeAsync<string>("prompt", "Название задачи", "");
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                await TaskService.CreateTask(title, TaskCategory.ToDoList);
+                await LoadTasks();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Ошибка при создании задачи: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteTask(int taskId)
+    {
+        try
+        {
+            await TaskService.Delete(taskId);
+            await History.ClearStackAsync();
+            await LoadTasks();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Ошибка при удалении задачи: {ex.Message}");
+        }
+    }
+}
+
+<style>
+.new-task-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 1rem;
+    margin-top: 1rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.new-task-btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.new-task-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.new-task-text {
+    font-size: 1rem;
+    font-weight: 500;
+}
+</style>

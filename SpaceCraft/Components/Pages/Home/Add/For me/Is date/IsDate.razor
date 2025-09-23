@@ -1,0 +1,27 @@
+﻿@page "/is-date"
+@inject NavigationHistoryService History
+
+<h1>Есть ли точная дата?</h1>
+<BackButton />
+<div class="choice-buttons">
+    <button class="choice-betw-both" @onclick="() => NavigateToChoice(true)">
+        <span class="bi bi-person-check"></span>
+        Да (календарь)
+    </button>
+
+    <button class="choice-betw-both" @onclick="() => NavigateToChoice(false)">
+        <span class="bi bi-person-x"></span>
+        Нет (когда-нибудь потом)
+    </button>
+</div>
+
+@code {
+    [Inject]
+    private NavigationManager Navigation { get; set; }
+
+    private async Task NavigateToChoice(bool isForMe)
+    {
+        await History.PushAsync("/is-date");
+        Navigation.NavigateTo(isForMe ? "/calendar" : "/whenever");
+    }
+}

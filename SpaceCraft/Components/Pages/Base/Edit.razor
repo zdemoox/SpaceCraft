@@ -1,0 +1,93 @@
+﻿@page "/edit/{Id:int}"
+@inject NavigationManager Nav
+@inject KnowledgeService Service
+@inject IJSRuntime JS
+@inject NavigationHistoryService History
+
+@if (item == null)
+{
+    <div class="loading">
+        <p>Загружается...</p>
+    </div>
+}
+else
+{
+    <h1 class="mb-4 text-xl font-bold">
+        <input type="text" class="header-input" @bind="item.Title" />
+    </h1>
+
+    <div class="mt-4">
+        <textarea class="editor-container" @bind="item.Content"></textarea>
+    </div>
+
+    <div class="mt-4">
+        <button class="button-save" @onclick="SaveContent">Сохранить</button>
+    </div>
+}
+
+<BackButton />
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private KnowledgeItem? item;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            item = await Service.Get(Id);
+            if (item == null)
+            {
+                await JS.InvokeVoidAsync("alert", "Файл не найден");
+                Nav.NavigateTo("/base");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Ошибка при загрузке файла: {ex.Message}");
+            Nav.NavigateTo("/base");
+        }
+    }
+
+    async Task SaveContent()
+    {
+        if (item != null)
+        {
+            try
+            {
+                await Service.SaveContent(item.Id, item.Content);
+                await Service.SaveTitle(item.Id, item.Title);
+                var currentUrl = Nav.Uri.Replace(Nav.BaseUri, "/");
+                await History.PushAsync(currentUrl);
+                Nav.NavigateTo($"/base/{item.ParentId}");
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("alert", $"Ошибка при сохранении: {ex.Message}");
+            }
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("alert", "Ошибка: Не найдено содержимое для редактирования.");
+        }
+    }
+
+    private async Task HandleBack()
+    {
+        var currentUrl = Nav.Uri.Replace(Nav.BaseUri, "/");
+        await History.PushAsync(currentUrl);
+        Nav.NavigateTo("/base");
+    }
+}
+
+<style>
+    .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-size: 1.2rem;
+        color: #666;
+    }
+</style>

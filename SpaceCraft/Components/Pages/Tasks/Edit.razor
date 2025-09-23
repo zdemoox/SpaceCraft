@@ -1,0 +1,79 @@
+@page "/task/edit/{Id:int}"
+@inject NavigationManager Nav
+@inject TaskService TaskService
+@inject IJSRuntime JS
+@using SpaceCraft.Services
+@inject NavigationHistoryService History
+
+@if (task == null) {
+    <div class="loading">
+        <p>Загружается...</p>
+    </div>
+}
+else
+{
+    <h1 class="mb-4 text-xl font-bold">
+        <input type="text" class="header-input" @bind="task.Title" />
+    </h1>
+    <div class="mt-4">
+        <textarea class="editor-container" @bind="task.Description"></textarea>
+    </div>
+
+    <div class="mt-4">
+        <button class="button-save" @onclick="SaveContent">Сохранить</button>
+    </div>
+}
+
+<BackButton />
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private TaskItem? task;
+
+    protected override async Task OnInitializedAsync()
+    {
+        task = await TaskService.Get(Id);
+    }
+
+    async Task SaveContent()
+    {
+        try
+        {
+            if (task != null)
+            {
+                await TaskService.UpdateTask(task.Id, task.Title ?? "", task.Description ?? "");
+                var currentUrl = Nav.Uri.Replace(Nav.BaseUri, "/");
+                await History.PushAsync(currentUrl);
+                
+                switch (task.Category)
+                {
+                    case TaskCategory.ToDoList:
+                        Nav.NavigateTo("/to-do-list");
+                        break;
+                    case TaskCategory.Calendar:
+                        Nav.NavigateTo("/calendar");
+                        break;
+                    case TaskCategory.Whenever:
+                        Nav.NavigateTo("/whenever");
+                        break;
+                    case TaskCategory.Projects:
+                        Nav.NavigateTo("/projects");
+                        break;
+                    case TaskCategory.Delegate:
+                        Nav.NavigateTo("/delegate");
+                        break;
+                }
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("alert", "Ошибка: Не найдена задача для редактирования.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Ошибка при сохранении: {ex.Message}");
+            Console.WriteLine($"Error saving task: {ex}");
+        }
+    }
+} 

@@ -1,0 +1,28 @@
+﻿@page "/action-or-info"
+@inject NavigationHistoryService History
+<h1>Действие или информация?</h1>
+<BackButton />
+<div class="choice-buttons">
+    <button class="choice-betw-both" @onclick="NavigateToAction">
+        <span class="oi oi-task"></span> Действие
+    </button>
+
+    <button class="choice-betw-both" @onclick="NavigateToInfo">
+        <span class="oi oi-book"></span> Информация
+    </button>
+</div>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; }
+
+    private async Task NavigateToAction()
+    {
+        await History.PushAsync("/action-or-info");
+        Navigation.NavigateTo("/me-or-not");
+    }
+    private async Task NavigateToInfo()
+    {
+        await History.PushAsync("/action-or-info");
+        Navigation.NavigateTo("/base");
+    }
+}

@@ -1,0 +1,115 @@
+@inherits LayoutComponentBase
+@inject IJSRuntime JSRuntime
+
+<div class="auth-layout" data-theme="dark">
+    <div class="auth-container">
+        @Body
+    </div>
+</div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("document.documentElement.setAttribute", "data-theme", "dark");
+        }
+    }
+}
+
+<style>
+    .auth-layout {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #1a1a1a !important;
+        color: #ffffff !important;
+    }
+
+    .auth-container {
+        width: 100%;
+        max-width: 400px;
+        padding: 2rem;
+        background-color: #2d2d2d !important;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+        color: #ffffff !important;
+    }
+
+    .auth-layout h1,
+    .auth-layout h2,
+    .auth-layout h3,
+    .auth-layout p,
+    .auth-layout label,
+    .auth-layout span {
+        color: #ffffff !important;
+    }
+
+    .auth-layout .form-input {
+        background-color: #404040 !important;
+        border: 1px solid #525252 !important;
+        color: #ffffff !important;
+    }
+
+    .auth-layout .form-input::placeholder {
+        color: #9ca3af !important;
+    }
+
+    .auth-layout .form-input:focus {
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2) !important;
+    }
+
+    .auth-layout .btn-primary {
+        background-color: #8b5cf6 !important;
+        color: #ffffff !important;
+        border: none !important;
+    }
+
+    .auth-layout .btn-primary:hover {
+        background-color: #7c3aed !important;
+    }
+
+    .auth-layout .btn-secondary {
+        background-color: #6b7280 !important;
+        color: #ffffff !important;
+        border: none !important;
+    }
+
+    .auth-layout .btn-secondary:hover {
+        background-color: #4b5563 !important;
+    }
+
+    .auth-layout .error-message {
+        color: #ef4444 !important;
+        background-color: rgba(239, 68, 68, 0.1) !important;
+        border: 1px solid #ef4444 !important;
+    }
+
+    .auth-layout .auth-links a {
+        color: #8b5cf6 !important;
+    }
+
+    .auth-layout .auth-links a:hover {
+        color: #7c3aed !important;
+    }
+
+    .auth-layout .auth-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .auth-layout .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .auth-layout .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #ffffff !important;
+    }
+</style> 

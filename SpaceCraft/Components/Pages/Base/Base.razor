@@ -1,0 +1,226 @@
+﻿@page "/base/{ParentId:int?}"
+@inject NavigationManager Nav
+@inject KnowledgeService Service
+@inject NavigationHistoryService History
+@inject IJSRuntime JS
+
+<h1 class="mb-4 text-xl font-bold">@CurrentTitle</h1>
+
+<div class="space-y-2">
+    @if (Items != null)
+    {
+        @foreach (var item in Items)
+        {
+            <div class="knowledge-item">
+                <span @onclick="@(() => Open(item))" class="knowledge-item-content">
+                    <span class="knowledge-icon">@(item.IsFolder ? "📁" : "📄")</span>
+                    <span class="knowledge-title">@item.Title</span>
+                </span>
+
+                <div class="knowledge-actions">
+                    <button @onclick="() => TogglePin(item.Id)" class="action-btn pin-btn" title="@(item.IsPinned ? "Открепить" : "Закрепить")">
+                        <span class="action-icon">@(item.IsPinned ? "📌❌" : "📌")</span>
+                    </button>
+                    <button @onclick="() => Edit(item.Id)" class="action-btn edit-btn" title="Изменить название">
+                        <span class="action-icon">✏️</span>
+                    </button>
+                    <button @onclick="() => Delete(item.Id)" class="action-btn delete-btn" title="Удалить">
+                        <span class="action-icon">🗑</span>
+                    </button>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<div class="mt-4 flex gap-2">
+    <button class="button-base button-folder" @onclick="() => Add(true)">+ Папка</button>
+    <button class="button-base button-file" @onclick="() => Add(false)">+ Файл</button>
+        <BackButton />
+</div>
+
+@code {
+    [Parameter] public int? ParentId { get; set; }
+
+    private List<KnowledgeItem>? Items;
+    private KnowledgeItem? ParentItem;
+    private string CurrentTitle => ParentItem?.Title ?? "База";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        if (ParentId.HasValue)
+        {
+            ParentItem = await Service.Get(ParentId.Value);
+        }
+        else
+        {
+            ParentItem = null;
+        }
+        
+        await Refresh();
+    }
+
+    private async Task Refresh()
+    {
+        Items = await Service.GetByParent(ParentId);
+    }
+
+    private async Task Open(KnowledgeItem item)
+    {
+        if (item.IsFolder)
+        {
+            var currentUrl = Nav.Uri.Replace(Nav.BaseUri, "/");
+            await History.PushAsync(currentUrl);
+            Nav.NavigateTo($"/base/{item.Id}");
+        }
+        else
+        {
+            var currentUrl = Nav.Uri.Replace(Nav.BaseUri, "/");
+            await History.PushAsync(currentUrl);
+            Nav.NavigateTo($"/edit/{item.Id}");
+        }
+    }
+
+    private async Task Add(bool isFolder)
+    {
+        var title = await JS.InvokeAsync<string>("prompt", isFolder ? "Имя папки" : "Имя файла", "");
+        if (string.IsNullOrWhiteSpace(title)) return;
+
+        await Service.Add(new KnowledgeItem
+        {
+            Title = title,
+            IsFolder = isFolder,
+            ParentId = ParentId
+        });
+
+        await Refresh();
+    }
+
+    private async Task Delete(int id)
+    {
+        await Service.Delete(id);
+        await History.ClearStackAsync();
+        await Refresh();
+    }
+
+    private async Task Edit(int id)
+    {
+        var item = await Service.Get(id);
+        if (item == null) return;
+
+        var newTitle = await JS.InvokeAsync<string>("prompt", "Введите нужную информацию", "Новое имя", item.Title);
+        if (string.IsNullOrWhiteSpace(newTitle)) return;
+
+        await Service.Rename(id, newTitle);
+        await Refresh();
+    }
+
+    private async Task TogglePin(int id)
+    {
+        await Service.TogglePin(id);
+        await Refresh();
+        StateHasChanged();
+    }
+}
+
+<style>
+.knowledge-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: var(--surface-color);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.knowledge-item:hover {
+    background: var(--nav-hover);
+    border-color: var(--primary-color);
+}
+
+.knowledge-item-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    flex: 1;
+    min-width: 0;
+}
+
+.knowledge-item-content:hover .knowledge-title {
+    text-decoration: underline;
+    color: var(--primary-color);
+}
+
+.knowledge-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.knowledge-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
+}
+
+.knowledge-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background: var(--background-color);
+    transform: scale(1.1);
+}
+
+.action-icon {
+    font-size: 1.125rem;
+    line-height: 1;
+}
+
+.pin-btn:hover {
+    background: var(--warning-color);
+}
+
+.edit-btn:hover {
+    background: var(--info-color);
+}
+
+.delete-btn:hover {
+    background: var(--error-color);
+}
+
+.pin-btn:hover .action-icon,
+.edit-btn:hover .action-icon,
+.delete-btn:hover .action-icon {
+    color: white;
+}
+</style>

@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpaceCraft", "SpaceCraft\SpaceCraft.csproj", "{E9628124-007B-4812-BD41-565F67424AB0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpaceCraft.API", "SpaceCraft.API\SpaceCraft.API.csproj", "{4FED2D7D-96A7-36FC-5519-96F2C89973A4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E9628124-007B-4812-BD41-565F67424AB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9628124-007B-4812-BD41-565F67424AB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9628124-007B-4812-BD41-565F67424AB0}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{E9628124-007B-4812-BD41-565F67424AB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9628124-007B-4812-BD41-565F67424AB0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9628124-007B-4812-BD41-565F67424AB0}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{4FED2D7D-96A7-36FC-5519-96F2C89973A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FED2D7D-96A7-36FC-5519-96F2C89973A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FED2D7D-96A7-36FC-5519-96F2C89973A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FED2D7D-96A7-36FC-5519-96F2C89973A4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1C20F89E-60D0-414B-B277-BADB637479FA}
+	EndGlobalSection
+EndGlobal

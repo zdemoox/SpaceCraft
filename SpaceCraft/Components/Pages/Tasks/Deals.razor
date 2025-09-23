@@ -1,0 +1,56 @@
+﻿@page "/tasks"
+@using SpaceCraft.Services
+@inject NavigationHistoryService History
+<h1>Дела</h1>
+<BackButton />
+<div class="choice-deals">
+    <button class="choice-betw-five" @onclick="NavigateToDo">
+        <span class="bi bi-person-check"></span> Ближайшее время
+    </button>
+
+    <button class="choice-betw-five" @onclick="NavigateToCalendar">
+        <span class="bi bi-person-check"></span> Календарь
+    </button>
+
+    <button class="choice-betw-five" @onclick="NavigateToProjects">
+        <span class="bi bi-person-check"></span> Проекты
+    </button>
+
+    <button class="choice-betw-five" @onclick="NavigateToWhenever">
+        <span class="bi bi-person-check"></span> Когда-нибудь потом
+    </button>
+
+    <button class="choice-betw-five" @onclick="NavigateToDelegate">
+        <span class="bi bi-person-check"></span> Делегировать
+    </button>
+
+</div>
+@code {
+    [Inject] private NavigationManager Navigation { get; set; }
+
+    private async Task NavigateToDo()
+    {
+        await History.PushAsync("/tasks");
+        Navigation.NavigateTo("/to-do-list");
+    }
+    private async Task NavigateToCalendar()
+    {
+        await History.PushAsync("/tasks");
+        Navigation.NavigateTo("/calendar");
+    }
+    private async Task NavigateToProjects()
+    {
+        await History.PushAsync("/tasks");
+        Navigation.NavigateTo("/projects");
+    }
+    private async Task NavigateToWhenever()
+    {
+        await History.PushAsync("/tasks");
+        Navigation.NavigateTo("/whenever");
+    }
+    private async Task NavigateToDelegate()
+    {
+        await History.PushAsync("/tasks");
+        Navigation.NavigateTo("/delegate");
+    }
+}

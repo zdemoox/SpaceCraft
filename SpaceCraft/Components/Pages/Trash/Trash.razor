@@ -1,0 +1,505 @@
+﻿@page "/trash"
+@using SpaceCraft.Services
+@using SpaceCraft.Models
+@inject TrashService TrashService
+@inject NavigationManager NavigationManager
+@inject NavigationHistoryService History
+
+<div class="trash-container">
+    <div class="trash-header">
+        <h1 class="trash-title">🗑️ Корзина</h1>
+        <p class="trash-subtitle">Удалённые элементы можно восстановить или удалить навсегда</p>
+    </div>
+
+    <div class="trash-sections">
+        <div class="trash-section">
+            <div class="section-header">
+                <h2 class="section-title">📚 Удалённая информация</h2>
+                <span class="item-count">@trashedKnowledgeItems.Count элементов</span>
+            </div>
+            <div class="trash-items">
+                @if (trashedKnowledgeItems.Any())
+                {
+                    @foreach (var item in trashedKnowledgeItems)
+                    {
+                        <div class="trash-item">
+                            <div class="item-content">
+                                <span class="item-icon">@(item.IsFolder ? "📁" : "📄")</span>
+                                <div class="item-details">
+                                    <h3 class="item-title">@item.Title</h3>
+                                    <p class="item-meta">Удалено: @item.DeletedAt?.ToString("dd.MM.yyyy HH:mm")</p>
+                                </div>
+                            </div>
+                            <div class="item-actions">
+                                <button class="action-btn restore-btn" @onclick="() => RestoreKnowledgeItem(item.Id)"
+                                    title="Восстановить">
+                                    <span class="action-icon">↩️</span>
+                                </button>
+                                <button class="action-btn delete-btn" @onclick="() => AskDeleteKnowledge(item.Id)"
+                                    title="Удалить навсегда">
+                                    <span class="action-icon">🗑</span>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <span class="empty-icon">📂</span>
+                        <p class="empty-text">Нет удалённой информации</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="trash-section">
+            <div class="section-header">
+                <h2 class="section-title">📋 Удалённые задачи</h2>
+                <span class="item-count">@trashedTasks.Count элементов</span>
+            </div>
+            <div class="trash-items">
+                @if (trashedTasks.Any())
+                {
+                    @foreach (var task in trashedTasks)
+                    {
+                        <div class="trash-item">
+                            <div class="item-content">
+                                <span class="item-icon">📄</span>
+                                <div class="item-details">
+                                    <h3 class="item-title">@task.Title</h3>
+                                    <p class="item-meta">Удалено: @task.DeletedAt?.ToString("dd.MM.yyyy HH:mm")</p>
+                                </div>
+                            </div>
+                            <div class="item-actions">
+                                <button class="action-btn restore-btn" @onclick="() => RestoreTask(task.Id)"
+                                    title="Восстановить">
+                                    <span class="action-icon">↩️</span>
+                                </button>
+                                <button class="action-btn delete-btn" @onclick="() => AskDeleteTask(task.Id)"
+                                    title="Удалить навсегда">
+                                    <span class="action-icon">🗑</span>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <span class="empty-icon">✅</span>
+                        <p class="empty-text">Нет удалённых задач</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (showConfirm)
+{
+    <div class="modal-backdrop">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="theme-text">⚠️ Невозвратное удаление</h3>
+            </div>
+            <div class="modal-body">
+                <p class="theme-text-muted">Вы уверены, что хотите удалить элемент навсегда? Это действие нельзя отменить.</p>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-secondary" @onclick="CancelDelete">
+                    <span>❌</span>
+                    <span>Отмена</span>
+                </button>
+                <button class="btn-danger" @onclick="ConfirmDelete">
+                    <span>🗑</span>
+                    <span>Удалить</span>
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<KnowledgeItem> trashedKnowledgeItems = new();
+    private List<TaskItem> trashedTasks = new();
+
+    private bool showConfirm = false;
+    private int? pendingDeleteKnowledgeId = null;
+    private int? pendingDeleteTaskId = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTrashedItems();
+    }
+
+    private async Task LoadTrashedItems()
+    {
+        trashedKnowledgeItems = await TrashService.GetTrashedKnowledge();
+        trashedTasks = await TrashService.GetTrashedTasks();
+    }
+
+    private async Task RestoreKnowledgeItem(int id)
+    {
+        await TrashService.RestoreKnowledge(id);
+        await LoadTrashedItems();
+    }
+
+    private void AskDeleteKnowledge(int id)
+    {
+        pendingDeleteKnowledgeId = id;
+        pendingDeleteTaskId = null;
+        showConfirm = true;
+    }
+
+    private void AskDeleteTask(int id)
+    {
+        pendingDeleteTaskId = id;
+        pendingDeleteKnowledgeId = null;
+        showConfirm = true;
+    }
+
+    private void CancelDelete()
+    {
+        showConfirm = false;
+        pendingDeleteKnowledgeId = null;
+        pendingDeleteTaskId = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (pendingDeleteKnowledgeId.HasValue)
+        {
+            await TrashService.PermanentlyDeleteKnowledge(pendingDeleteKnowledgeId.Value);
+        }
+        else if (pendingDeleteTaskId.HasValue)
+        {
+            await TrashService.PermanentlyDeleteTask(pendingDeleteTaskId.Value);
+        }
+
+        showConfirm = false;
+        pendingDeleteKnowledgeId = null;
+        pendingDeleteTaskId = null;
+        await LoadTrashedItems();
+    }
+
+    private async Task DeleteKnowledgeItem(int id)
+    {
+        await TrashService.PermanentlyDeleteKnowledge(id);
+        await LoadTrashedItems();
+    }
+
+    private async Task RestoreTask(int id)
+    {
+        await TrashService.RestoreTask(id);
+        await LoadTrashedItems();
+    }
+
+    private async Task DeleteTask(int id)
+    {
+        await TrashService.PermanentlyDeleteTask(id);
+        await LoadTrashedItems();
+    }
+}
+
+<style>
+.trash-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.trash-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--surface-color);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+.trash-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem 0;
+}
+
+.trash-subtitle {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.trash-sections {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.trash-section {
+    background: var(--surface-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px var(--shadow-color);
+    border: 1px solid var(--border-color);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border-light);
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.item-count {
+    background: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.trash-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.trash-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: var(--background-color);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.trash-item:hover {
+    background: var(--nav-hover);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.item-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.item-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.item-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.item-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0 0 0.25rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-meta {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.item-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: scale(1.1);
+}
+
+.action-icon {
+    font-size: 1.125rem;
+    line-height: 1;
+}
+
+.restore-btn:hover {
+    background: var(--success-color);
+}
+
+.delete-btn:hover {
+    background: var(--error-color);
+}
+
+.restore-btn:hover .action-icon,
+.delete-btn:hover .action-icon {
+    color: white;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.6;
+}
+
+.empty-text {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 450px;
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 20px 40px var(--shadow-color);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 1.5rem 1.5rem 0 1.5rem;
+    text-align: center;
+}
+
+.modal-body {
+    padding: 1rem 1.5rem;
+    text-align: center;
+}
+
+.theme-text {
+    color: var(--text-primary);
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.theme-text-muted {
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--background-color);
+}
+
+.btn-secondary,
+.btn-danger {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.btn-secondary {
+    background: var(--primary-color) !important;
+    color: var(--surface-color);
+}
+
+.btn-secondary:hover {
+    background: var(--primary-hover) !important;
+    color: var(--text-white);
+}
+
+.btn-danger {
+    background: var(--error-color);
+    color: var(--surface-color);
+}
+
+.btn-danger:hover {
+    background: var(--primary-hover) !important;
+    color: var(--text-white);
+}
+
+
+@@media (max-width: 768px) {
+    .trash-sections {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .trash-container {
+        padding: 1rem;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+}
+</style>

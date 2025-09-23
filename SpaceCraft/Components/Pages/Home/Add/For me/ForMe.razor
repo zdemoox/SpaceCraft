@@ -1,0 +1,27 @@
+﻿@page "/for-me"
+@inject NavigationHistoryService History
+
+<h1> Ближайшее время (неделя)?</h1>
+<BackButton />
+<div class="choice-buttons">
+    <button class="choice-betw-both" @onclick="() => NavigateToChoice(true)">
+        <span class="bi bi-person-check"></span>
+        Да
+    </button>
+
+    <button class="choice-betw-both" @onclick="() => NavigateToChoice(false)">
+        <span class="bi bi-person-x"></span>
+        Нет
+    </button>
+</div>
+
+@code {
+    [Inject]
+    private NavigationManager Navigation { get; set; }
+
+    private async Task NavigateToChoice(bool isForMe)
+    {
+        await History.PushAsync("/for-me");
+        Navigation.NavigateTo(isForMe ? "/is-one-step" : "/is-date");
+    }
+}
